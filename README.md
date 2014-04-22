@@ -1,4 +1,4 @@
 supership3000-dev
 =================
 
-This is the development branch for SuperShip 3000. 
+This is the development repo for SuperShip 3000. 
