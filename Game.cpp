@@ -14,7 +14,8 @@ SDL_Window *window      ;
 SDL_Renderer *rend      ;
 SDL_Event event         ;
 int toggleTime          = 0;
-const int RENDEL      = 5;
+const int RENDEL        = 5;
+const int TOGDEL       = 250;
 
 bool shipMv             ;
 SDL_Rect shipRect       ;
@@ -24,6 +25,7 @@ float shipPos           = 0;
 const float SHIPACCEL     = 2;
 const float SHIPDECEL     = 2;
 const float FRICRATE    = .1;
+const float NOFRIC      = 1.0;
 const int SHIPW         = SCWIDTH/10;
 const int SHIPH         = SCWIDTH/10 + 10;
 const int XSTART        = SCWIDTH/2 - SCWIDTH/20;
@@ -154,8 +156,7 @@ void eventHandle() {
     }
 
     if (state[SDL_SCANCODE_F]) {
-        cout << SDL_GetTicks() - toggleTime << endl;
-        if (SDL_GetTicks() - toggleTime > 250) {
+        if (SDL_GetTicks() - toggleTime > TOGDEL) {
             toggleFullscreen();
             toggleTime = SDL_GetTicks();
         }
@@ -181,7 +182,7 @@ void moveShip() {
         shipPos = (SCWIDTH - SHIPW - WINCONST);
     }
 
-    shipVel = shipVel * (1.0 - FRICRATE);
+    shipVel = shipVel * (NOFRIC - FRICRATE);
 
     shipPos += shipVel;
     shipRect.x = shipPos;
