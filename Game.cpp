@@ -14,7 +14,6 @@ SDL_Window *window      ;
 SDL_Renderer *rend      ;
 SDL_Event event         ;
 int toggleTime          = 0;
-const int RENDEL        = 5;
 const int SCALEMODE     = 0;
 
 bool shipMv             ;
@@ -22,15 +21,15 @@ SDL_Rect shipRect       ;
 SDL_Texture *ship       ;
 float shipVel           = 0;
 float shipPos           = 0;
-const float SHIPACCEL     = 2;
-const float SHIPDECEL     = 2;
+const float SHIPACCEL     = 10;
+const float SHIPDECEL     = 10;
 const float FRICRATE    = .1;
 const int SHIPW         = SCWIDTH/10;
 const int SHIPH         = SCWIDTH/10 + 10;
 const int XSTART        = SCWIDTH/2 - SCWIDTH/20;
 const int SHIPY         = SCHEIGHT - (SCWIDTH/10 + 10);
-const int WINCONST      = 5;
-const int MAXSPEED      = 5;
+const int WINCONST      = 10;
+const int MAXSPEED      = 10;
 
 const int BVEL          = 5;
 const int BNUM          = 100;
@@ -75,7 +74,7 @@ bool initGame() {
         return 2;
     }
 
-    rend = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    rend = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (rend == NULL){
         logSDLError(cout, "CreateRenderer");
         return 3;
@@ -99,7 +98,6 @@ void renderGame() {
     SDL_RenderClear(rend);
     renderTexture(ship, rend, shipRect);
     SDL_RenderPresent(rend);
-    SDL_Delay(RENDEL);
 }
 
 void shootGun() {
