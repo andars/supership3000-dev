@@ -14,6 +14,7 @@ SDL_Window *window      ;
 SDL_Renderer *rend      ;
 SDL_Event event         ;
 int toggleTime          = 0;
+const int RENDEL        = 0;
 const int SCALEMODE     = 0;
 
 bool shipMv             ;
@@ -98,6 +99,7 @@ void renderGame() {
     SDL_RenderClear(rend);
     renderTexture(ship, rend, shipRect);
     SDL_RenderPresent(rend);
+    SDL_Delay(RENDEL);
 }
 
 void shootGun() {
