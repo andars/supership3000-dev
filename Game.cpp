@@ -17,7 +17,7 @@ int toggleTime          = 0;
 const int TOGDEL        = 250;
 const int RENDEL        = 0;
 const int SCALEMODE     = 0;
-const int FPS           = 60;
+int FPS                 = 60;
 int frame               = 0;
 int timeMes             ;
 int capDel              ;
@@ -154,6 +154,15 @@ void eventHandle() {
             shipVel += SHIPDECEL;
             shipMv = false;
         }
+    }
+
+    if (state[SDL_SCANCODE_C]) {
+        if (FPS == 60) {
+            FPS = 120;
+        } else {
+            FPS = 60;
+        }
+
     }
 
     if (state[SDL_SCANCODE_RIGHT]) {
