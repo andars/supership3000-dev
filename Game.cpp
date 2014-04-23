@@ -6,8 +6,6 @@ using namespace std;
 const int SCHEIGHT      = 600;
 const int SCWIDTH       = 400;
 const char* TITLE       = "SuperShip 3000";
-const int WINCONST      = 5;
-const int MAXSPEED      = 6;
 
 const Uint8 *state      = SDL_GetKeyboardState(NULL);
 bool done               = false;
@@ -15,21 +13,27 @@ bool done               = false;
 SDL_Window *window      ;
 SDL_Renderer *rend      ;
 SDL_Event event         ;
+int toggleTime          = 0;
+const int RENDEL      = 5;
 
 bool shipMv             ;
 SDL_Rect shipRect       ;
 SDL_Texture *ship       ;
 float shipVel           = 0;
 float shipPos           = 0;
-const int SHIPACCEL     = 1;
-const int SHIPDECEL     = .5;
+const float SHIPACCEL     = 2;
+const float SHIPDECEL     = 2;
+const float FRICRATE    = .1;
 const int SHIPW         = SCWIDTH/10;
 const int SHIPH         = SCWIDTH/10 + 10;
 const int XSTART        = SCWIDTH/2 - SCWIDTH/20;
 const int SHIPY         = SCHEIGHT - (SCWIDTH/10 + 10);
+const int WINCONST      = 5;
+const int MAXSPEED      = 5;
 
 const int BVEL          = 5;
-SDL_Rect* bullets[100]  ;
+const int BNUM          = 100;
+SDL_Rect* bullets[BNUM] ;
 
 using namespace std;
 
@@ -64,7 +68,7 @@ bool initGame() {
         return 1;
     }
 
-     window = SDL_CreateWindow(TITLE, -1, -1, SCWIDTH, SCHEIGHT, SDL_WINDOW_SHOWN);
+     window = SDL_CreateWindow(TITLE, -1, -1, SCWIDTH, SCHEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
     if (window == NULL){
         logSDLError(cout, "CreateWindow");
         return 2;
@@ -76,6 +80,9 @@ bool initGame() {
         return 3;
     }
 
+    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");  // make the scaled rendering look smoother.
+    SDL_RenderSetLogicalSize(rend, SCWIDTH, SCHEIGHT);
+
     ship = loadTexture("assets/ship.bmp", rend);
     shipRect.x = XSTART;
     shipRect.y = SHIPY;
@@ -85,6 +92,35 @@ bool initGame() {
         return 4;
     }
     return true;
+}
+
+void renderGame() {
+    SDL_RenderClear(rend);
+    renderTexture(ship, rend, shipRect);
+    SDL_RenderPresent(rend);
+    SDL_Delay(RENDEL);
+}
+
+void shootGun() {
+    for (int i = 0; i < BNUM; i++) {
+
+    }
+}
+
+
+void toggleFullscreen()
+{
+    Uint32 flags = (SDL_GetWindowFlags(window) ^ SDL_WINDOW_FULLSCREEN_DESKTOP);
+    if (SDL_SetWindowFullscreen(window, flags) < 0) // NOTE: this takes FLAGS as the second param, NOT true/false!
+    {
+        std::cout << "Toggling fullscreen mode failed: " << SDL_GetError() << std::endl;
+    }
+    if ((flags & SDL_WINDOW_FULLSCREEN_DESKTOP) != 0)
+    {
+        SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
+        SDL_RenderSetLogicalSize(rend, SCWIDTH, SCHEIGHT);
+    }
+    SDL_SetWindowSize(window, SCWIDTH, SCHEIGHT);
 }
 
 void eventHandle() {
@@ -107,7 +143,6 @@ void eventHandle() {
         }
     }
 
-
     if (state[SDL_SCANCODE_RIGHT]) {
         shipMv = true;
         shipVel += SHIPACCEL;
@@ -117,14 +152,20 @@ void eventHandle() {
             shipMv = false;
         }
     }
+
+    if (state[SDL_SCANCODE_F]) {
+        cout << SDL_GetTicks() - toggleTime << endl;
+        if (SDL_GetTicks() - toggleTime > 250) {
+            toggleFullscreen();
+            toggleTime = SDL_GetTicks();
+        }
+
+    }
+
+
+
 }
 
-void renderGame() {
-    SDL_RenderClear(rend);
-    renderTexture(ship, rend, shipRect);
-    SDL_RenderPresent(rend);
-    SDL_Delay(5);
-}
 
 
 void moveShip() {
@@ -140,7 +181,7 @@ void moveShip() {
         shipPos = (SCWIDTH - SHIPW - WINCONST);
     }
 
-    shipVel = shipVel * .95;
+    shipVel = shipVel * (1.0 - FRICRATE);
 
     shipPos += shipVel;
     shipRect.x = shipPos;
