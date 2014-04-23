@@ -14,9 +14,14 @@ SDL_Window *window      ;
 SDL_Renderer *rend      ;
 SDL_Event event         ;
 int toggleTime          = 0;
-const int TOGDEL       = 250;
+const int TOGDEL        = 250;
 const int RENDEL        = 0;
 const int SCALEMODE     = 0;
+const int FPS           = 60;
+int frame               = 0;
+int timeMes             ;
+int capDel              ;
+bool CAPFPS             = true;
 
 bool shipMv             ;
 SDL_Rect shipRect       ;
@@ -98,17 +103,22 @@ bool initGame() {
 }
 
 void renderGame() {
+    timeMes = SDL_GetTicks();
     SDL_RenderClear(rend);
     renderTexture(ship, rend, shipRect);
     SDL_RenderPresent(rend);
     SDL_Delay(RENDEL);
-}
-
-void shootGun() {
-    for (int i = 0; i < BNUM; i++) {
-
+    frame++;
+    capDel = SDL_GetTicks() - timeMes;
+    if(CAPFPS == true && capDel < 1000 / FPS) {
+        SDL_Delay(1000/FPS - capDel);
     }
 }
+
+// void shootGun() {
+//     for (int i = 0; i < BNUM; i++) {
+//     }
+// }
 
 
 void toggleFullscreen()
@@ -129,7 +139,7 @@ void toggleFullscreen()
 void eventHandle() {
     SDL_PollEvent(&event);
 
-    if (event.type == SDL_QUIT) {
+    if (event.type == SDL_QUIT || state[SDL_SCANCODE_Q]) {
         done = true;
     }
 
