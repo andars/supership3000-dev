@@ -14,7 +14,8 @@ SDL_Window *window      ;
 SDL_Renderer *rend      ;
 SDL_Event event         ;
 int toggleTime          = 0;
-const int RENDEL      = 5;
+const int RENDEL        = 5;
+const int SCALEMODE     = 0;
 
 bool shipMv             ;
 SDL_Rect shipRect       ;
@@ -80,7 +81,7 @@ bool initGame() {
         return 3;
     }
 
-    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");  // make the scaled rendering look smoother.
+    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, SCALEMODE);  // make the scaled rendering look smoother.
     SDL_RenderSetLogicalSize(rend, SCWIDTH, SCHEIGHT);
 
     ship = loadTexture("assets/ship.bmp", rend);
