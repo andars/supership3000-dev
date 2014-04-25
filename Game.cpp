@@ -1,12 +1,13 @@
 #include <iostream>
 #include <deque>
 #include "SDL2/SDL.h"
+#include "SDL2/SDL_image.h"
 
 using namespace std;
 
 const int SCHEIGHT      = 600;
 const int SCWIDTH       = 400;
-const char* TITLE       = "SuperShip 3000";
+const char* TITLE       = "Supership3000";
 
 const Uint8 *state      = SDL_GetKeyboardState(NULL);
 bool done               = false;
@@ -25,20 +26,24 @@ int capDel              ;
 bool CAPFPS             = true;
 
 bool shipMv             ;
-SDL_Texture *ship       ;
+SDL_Texture *shipTex       ;
 float shipVel           = 0;
-const float SHIPACCEL     = 10;
-const float SHIPDECEL     = 10;
+const float SHIPACCEL     = 5;
+const float SHIPDECEL     = 2;
 const float FRICRATE    = .1;
 const float NOFRIC      = 1.0;
 SDL_Rect shipRect       = {SCWIDTH/2 - SCWIDTH/20,  SCHEIGHT - (SCWIDTH/10 + 10), SCWIDTH/10, SCWIDTH/10 + 10};
 const int WINCONST      = 10;
 const int MAXSPEED      = 10;
 
+SDL_Texture* bulTex     = NULL;
 const int BVEL          = 3;
 const int BNUM          = 100;
 const int BSZ           = 10;
-int bulTime             = 0;
+const int BULY          = shipRect.y - BSZ/2;
+const int BDELC         = -BSZ;
+const int BDEL          = 150;
+int bulTime             = -BDEL;
 deque<SDL_Rect> bullets ;
 
 void logSDLError(ostream &os, const string &message) {
@@ -47,7 +52,7 @@ void logSDLError(ostream &os, const string &message) {
 
 SDL_Texture* loadTexture(const string &file, SDL_Renderer *renderer) {
 	SDL_Texture *texture = NULL;
-	SDL_Surface *image = SDL_LoadBMP(file.c_str());
+	SDL_Surface *image = IMG_Load(file.c_str());
 	if (image != NULL) {
 		texture = SDL_CreateTextureFromSurface(renderer, image);
 		SDL_FreeSurface(image);
@@ -65,9 +70,7 @@ void renderTexture(SDL_Texture *texture, SDL_Renderer *renderer, SDL_Rect sizeRe
 }
 
 void addBullet() {
-//    bulX.push_back(shipRect.x + shipRect.w/2 - BSZ/2);
-//    bulY.push_back(shipRect.y - BSZ);
-    SDL_Rect temp = {shipRect.x + shipRect.w/2 - BSZ/2, shipRect.y - BSZ, BSZ, BSZ};
+    SDL_Rect temp = {shipRect.x + shipRect.w/2 - BSZ/2, BULY, BSZ, BSZ};
     bullets.push_back(temp);
 }
 
@@ -85,7 +88,7 @@ bool initGame() {
         return 2;
     }
 
-    rend = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    rend = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     if (rend == NULL) {
         logSDLError(cout, "CreateRenderer");
         return 3;
@@ -94,9 +97,14 @@ bool initGame() {
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, SCALEMODE);
     SDL_RenderSetLogicalSize(rend, SCWIDTH, SCHEIGHT);
 
-    ship = loadTexture("assets/ship.bmp", rend);
-    if (ship == NULL) {
+    shipTex = loadTexture("assets/ship.png", rend);
+    if (shipTex == NULL) {
         return 4;
+    }
+
+    bulTex = loadTexture("assets/bullet.png", rend);
+    if (bulTex == NULL) {
+        return 5;
     }
     return true;
 }
@@ -104,10 +112,10 @@ bool initGame() {
 void renderGame() {
     timeMes = SDL_GetTicks();
     SDL_RenderClear(rend);
-    renderTexture(ship, rend, shipRect);
+    renderTexture(shipTex, rend, shipRect);
 
     for (int i = 0; i < bullets.size(); i++) {
-        renderTexture(ship, rend, bullets.at(i));
+        renderTexture(bulTex, rend, bullets.at(i));
     }
 
 
@@ -124,7 +132,7 @@ void toggleFullscreen()
 {
     Uint32 flags = (SDL_GetWindowFlags(window) ^ SDL_WINDOW_FULLSCREEN_DESKTOP);
     if (SDL_SetWindowFullscreen(window, flags) < 0) {
-        std::cout << "Toggling fullscreen mode failed: " << SDL_GetError() << std::endl;
+        cout << "Toggling fullscreen mode failed: " << SDL_GetError() << endl;
     }
     if ((flags & SDL_WINDOW_FULLSCREEN_DESKTOP) != 0) {
         SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
@@ -141,7 +149,11 @@ void eventHandle() {
     }
 
     if (state[SDL_SCANCODE_SPACE]) {
-        addBullet();
+        if (SDL_GetTicks() - bulTime > BDEL) {
+                addBullet();
+                bulTime = SDL_GetTicks();
+        }
+
     }
     if (state[SDL_SCANCODE_LEFT]) {
          shipMv = true;
@@ -200,12 +212,15 @@ void updatePositions() {
     }
 
     shipVel = shipVel * (NOFRIC - FRICRATE);
+    if (abs(shipVel) < .01) {
+        shipVel = 0;
+    }
 
     shipRect.x += shipVel;
 
 
     for (int i = 0; i < bullets.size(); i++) {
-        if (bullets.front().y < 0) {
+        if (bullets.front().y < BDELC) {
             bullets.pop_front();
         }
     }
