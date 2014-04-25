@@ -39,18 +39,16 @@ const int BVEL          = 3;
 const int BNUM          = 100;
 const int BSZ           = 10;
 int bulTime             = 0;
-deque<int> bulX        ;
-deque<int> bulY        ;
-SDL_Rect bulRect        = {0, 0, BSZ, BSZ};
+deque<SDL_Rect> bullets ;
 
-void logSDLError(ostream &os, const string &message){
+void logSDLError(ostream &os, const string &message) {
 	os << message << " error: " << SDL_GetError() << endl;
 }
 
-SDL_Texture* loadTexture(const string &file, SDL_Renderer *renderer){
+SDL_Texture* loadTexture(const string &file, SDL_Renderer *renderer) {
 	SDL_Texture *texture = NULL;
 	SDL_Surface *image = SDL_LoadBMP(file.c_str());
-	if (image != NULL){
+	if (image != NULL) {
 		texture = SDL_CreateTextureFromSurface(renderer, image);
 		SDL_FreeSurface(image);
 		if (texture == NULL)
@@ -62,36 +60,38 @@ SDL_Texture* loadTexture(const string &file, SDL_Renderer *renderer){
 	return texture;
 }
 
-void renderTexture(SDL_Texture *texture, SDL_Renderer *renderer, SDL_Rect sizeRect){
+void renderTexture(SDL_Texture *texture, SDL_Renderer *renderer, SDL_Rect sizeRect) {
 	SDL_RenderCopy(renderer, texture, NULL, &sizeRect);
 }
 
 void addBullet() {
-    bulX.push_back(shipRect.x + shipRect.w/2 - BSZ/2);
-    bulY.push_back(shipRect.y - BSZ);
+//    bulX.push_back(shipRect.x + shipRect.w/2 - BSZ/2);
+//    bulY.push_back(shipRect.y - BSZ);
+    SDL_Rect temp = {shipRect.x + shipRect.w/2 - BSZ/2, shipRect.y - BSZ, BSZ, BSZ};
+    bullets.push_back(temp);
 }
 
 
 bool initGame() {
 
-    if (SDL_Init(SDL_INIT_EVERYTHING) != 0){
+    if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
         logSDLError(cout, "SDL_Init");
         return 1;
     }
 
      window = SDL_CreateWindow(TITLE, -1, -1, SCWIDTH, SCHEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
-    if (window == NULL){
+    if (window == NULL) {
         logSDLError(cout, "CreateWindow");
         return 2;
     }
 
     rend = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    if (rend == NULL){
+    if (rend == NULL) {
         logSDLError(cout, "CreateRenderer");
         return 3;
     }
 
-    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, SCALEMODE);  // make the scaled rendering look smoother.
+    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, SCALEMODE);
     SDL_RenderSetLogicalSize(rend, SCWIDTH, SCHEIGHT);
 
     ship = loadTexture("assets/ship.bmp", rend);
@@ -106,10 +106,8 @@ void renderGame() {
     SDL_RenderClear(rend);
     renderTexture(ship, rend, shipRect);
 
-    for (int i = 0; i < bulX.size(); i++) {
-        bulRect.x = bulX.at(i);
-        bulRect.y = bulY.at(i);
-        renderTexture(ship, rend, bulRect);
+    for (int i = 0; i < bullets.size(); i++) {
+        renderTexture(ship, rend, bullets.at(i));
     }
 
 
@@ -125,12 +123,10 @@ void renderGame() {
 void toggleFullscreen()
 {
     Uint32 flags = (SDL_GetWindowFlags(window) ^ SDL_WINDOW_FULLSCREEN_DESKTOP);
-    if (SDL_SetWindowFullscreen(window, flags) < 0) // NOTE: this takes FLAGS as the second param, NOT true/false!
-    {
+    if (SDL_SetWindowFullscreen(window, flags) < 0) {
         std::cout << "Toggling fullscreen mode failed: " << SDL_GetError() << std::endl;
     }
-    if ((flags & SDL_WINDOW_FULLSCREEN_DESKTOP) != 0)
-    {
+    if ((flags & SDL_WINDOW_FULLSCREEN_DESKTOP) != 0) {
         SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
         SDL_RenderSetLogicalSize(rend, SCWIDTH, SCHEIGHT);
     }
@@ -205,18 +201,17 @@ void updatePositions() {
 
     shipVel = shipVel * (NOFRIC - FRICRATE);
 
-    //shipRect.x += shipVel;
     shipRect.x += shipVel;
 
-    for (int i = 0; i < bulY.size(); i++) {
-        if (bulY.front() < 0) {
-            bulY.pop_front();
-            bulX.pop_front();
+
+    for (int i = 0; i < bullets.size(); i++) {
+        if (bullets.front().y < 0) {
+            bullets.pop_front();
         }
     }
 
-    for (int i = 0; i < bulY.size(); i++ ) {
-        bulY.at(i) -= BVEL;
+    for (int i = 0; i < bullets.size(); i++ ) {
+        bullets.at(i).y -= BVEL;
     }
 }
 
