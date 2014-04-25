@@ -34,15 +34,15 @@ const float FRICRATE    = .1;
 const float NOFRIC      = 1.0;
 SDL_Rect shipRect       = {SCWIDTH/2 - SCWIDTH/20,  SCHEIGHT - (SCWIDTH/10 + 10), SCWIDTH/10, SCWIDTH/10 + 10};
 const int WINCONST      = 10;
-const int MAXSPEED      = 10;
+const int MAXSPEED      = 15;
 
 SDL_Texture* bulTex     = NULL;
 const int BVEL          = 3;
 const int BNUM          = 100;
 const int BSZ           = 10;
 const int BULY          = shipRect.y - BSZ/2;
-const int BDELC         = -BSZ;
-const int BDEL          = 150;
+const int BREM         = -BSZ;
+const int BDEL          = 75;
 int bulTime             = -BDEL;
 deque<SDL_Rect> bullets ;
 
@@ -220,7 +220,7 @@ void updatePositions() {
 
 
     for (int i = 0; i < bullets.size(); i++) {
-        if (bullets.front().y < BDELC) {
+        if (bullets.front().y < BREM) {
             bullets.pop_front();
         }
     }
