@@ -10,11 +10,11 @@ TARGET = game.exe
 
 all: $(TARGET)
 
-$(TARGET): Game.o
+$(TARGET): build/Game.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-%.o: %.cpp
+build/%.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $< 
 
 clean:
-	rm -f *.o game
+	rm -f build/*.o *.exe
