@@ -1,11 +1,13 @@
 #include <iostream>
+#include <deque>
 #include "SDL2/SDL.h"
+#include "SDL2/SDL_image.h"
 
 using namespace std;
 
 const int SCHEIGHT      = 600;
 const int SCWIDTH       = 400;
-const char* TITLE       = "SuperShip 3000";
+const char* TITLE       = "Supership3000";
 
 const Uint8 *state      = SDL_GetKeyboardState(NULL);
 bool done               = false;
@@ -24,35 +26,34 @@ int capDel              ;
 bool CAPFPS             = true;
 
 bool shipMv             ;
-SDL_Rect shipRect       ;
-SDL_Texture *ship       ;
+SDL_Texture *shipTex       ;
 float shipVel           = 0;
-float shipPos           = 0;
-const float SHIPACCEL     = 10;
-const float SHIPDECEL     = 10;
+const float SHIPACCEL     = 5;
+const float SHIPDECEL     = 2;
 const float FRICRATE    = .1;
 const float NOFRIC      = 1.0;
-const int SHIPW         = SCWIDTH/10;
-const int SHIPH         = SCWIDTH/10 + 10;
-const int XSTART        = SCWIDTH/2 - SCWIDTH/20;
-const int SHIPY         = SCHEIGHT - (SCWIDTH/10 + 10);
+SDL_Rect shipRect       = {SCWIDTH/2 - SCWIDTH/20,  SCHEIGHT - (SCWIDTH/10 + 10), SCWIDTH/10, SCWIDTH/10 + 10};
 const int WINCONST      = 10;
-const int MAXSPEED      = 10;
+const int MAXSPEED      = 15;
 
-const int BVEL          = 5;
+SDL_Texture* bulTex     = NULL;
+const int BVEL          = 3;
 const int BNUM          = 100;
-SDL_Rect* bullets[BNUM] ;
+const int BSZ           = 10;
+const int BULY          = shipRect.y - BSZ/2;
+const int BREM         = -BSZ;
+const int BDEL          = 75;
+int bulTime             = -BDEL;
+deque<SDL_Rect> bullets ;
 
-using namespace std;
-
-void logSDLError(ostream &os, const string &message){
+void logSDLError(ostream &os, const string &message) {
 	os << message << " error: " << SDL_GetError() << endl;
 }
 
-SDL_Texture* loadTexture(const string &file, SDL_Renderer *renderer){
+SDL_Texture* loadTexture(const string &file, SDL_Renderer *renderer) {
 	SDL_Texture *texture = NULL;
-	SDL_Surface *image = SDL_LoadBMP(file.c_str());
-	if (image != NULL){
+	SDL_Surface *image = IMG_Load(file.c_str());
+	if (image != NULL) {
 		texture = SDL_CreateTextureFromSurface(renderer, image);
 		SDL_FreeSurface(image);
 		if (texture == NULL)
@@ -64,40 +65,46 @@ SDL_Texture* loadTexture(const string &file, SDL_Renderer *renderer){
 	return texture;
 }
 
-void renderTexture(SDL_Texture *texture, SDL_Renderer *renderer, SDL_Rect sizeRect){
+void renderTexture(SDL_Texture *texture, SDL_Renderer *renderer, SDL_Rect sizeRect) {
 	SDL_RenderCopy(renderer, texture, NULL, &sizeRect);
+}
+
+void addBullet() {
+    SDL_Rect temp = {shipRect.x + shipRect.w/2 - BSZ/2, BULY, BSZ, BSZ};
+    bullets.push_back(temp);
 }
 
 
 bool initGame() {
 
-    if (SDL_Init(SDL_INIT_EVERYTHING) != 0){
+    if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
         logSDLError(cout, "SDL_Init");
         return 1;
     }
 
      window = SDL_CreateWindow(TITLE, -1, -1, SCWIDTH, SCHEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
-    if (window == NULL){
+    if (window == NULL) {
         logSDLError(cout, "CreateWindow");
         return 2;
     }
 
-    rend = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    if (rend == NULL){
+    rend = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    if (rend == NULL) {
         logSDLError(cout, "CreateRenderer");
         return 3;
     }
 
-    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, SCALEMODE);  // make the scaled rendering look smoother.
+    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, SCALEMODE);
     SDL_RenderSetLogicalSize(rend, SCWIDTH, SCHEIGHT);
 
-    ship = loadTexture("assets/ship.bmp", rend);
-    shipRect.x = XSTART;
-    shipRect.y = SHIPY;
-    shipRect.w = SHIPW;
-    shipRect.h = SHIPH;
-    if (ship == NULL) {
+    shipTex = loadTexture("assets/ship.png", rend);
+    if (shipTex == NULL) {
         return 4;
+    }
+
+    bulTex = loadTexture("assets/bullet.png", rend);
+    if (bulTex == NULL) {
+        return 5;
     }
     return true;
 }
@@ -105,7 +112,13 @@ bool initGame() {
 void renderGame() {
     timeMes = SDL_GetTicks();
     SDL_RenderClear(rend);
-    renderTexture(ship, rend, shipRect);
+    renderTexture(shipTex, rend, shipRect);
+
+    for (int i = 0; i < bullets.size(); i++) {
+        renderTexture(bulTex, rend, bullets.at(i));
+    }
+
+
     SDL_RenderPresent(rend);
     SDL_Delay(RENDEL);
     frame++;
@@ -115,21 +128,13 @@ void renderGame() {
     }
 }
 
-// void shootGun() {
-//     for (int i = 0; i < BNUM; i++) {
-//     }
-// }
-
-
 void toggleFullscreen()
 {
     Uint32 flags = (SDL_GetWindowFlags(window) ^ SDL_WINDOW_FULLSCREEN_DESKTOP);
-    if (SDL_SetWindowFullscreen(window, flags) < 0) // NOTE: this takes FLAGS as the second param, NOT true/false!
-    {
-        std::cout << "Toggling fullscreen mode failed: " << SDL_GetError() << std::endl;
+    if (SDL_SetWindowFullscreen(window, flags) < 0) {
+        cout << "Toggling fullscreen mode failed: " << SDL_GetError() << endl;
     }
-    if ((flags & SDL_WINDOW_FULLSCREEN_DESKTOP) != 0)
-    {
+    if ((flags & SDL_WINDOW_FULLSCREEN_DESKTOP) != 0) {
         SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
         SDL_RenderSetLogicalSize(rend, SCWIDTH, SCHEIGHT);
     }
@@ -144,7 +149,11 @@ void eventHandle() {
     }
 
     if (state[SDL_SCANCODE_SPACE]) {
-        cout << "Shoot at time:" << SDL_GetTicks() << "." << endl;
+        if (SDL_GetTicks() - bulTime > BDEL) {
+                addBullet();
+                bulTime = SDL_GetTicks();
+        }
+
     }
     if (state[SDL_SCANCODE_LEFT]) {
          shipMv = true;
@@ -189,23 +198,36 @@ void eventHandle() {
 
 
 
-void moveShip() {
+void updatePositions() {
     if (shipVel > MAXSPEED) {
         shipVel = MAXSPEED;
     } else if (shipVel < -MAXSPEED) {
         shipVel = -MAXSPEED;
     }
 
-    if (shipPos < WINCONST) {
-        shipPos = WINCONST;
-    } else if (shipPos > (SCWIDTH - SHIPW - WINCONST)) {
-        shipPos = (SCWIDTH - SHIPW - WINCONST);
+    if (shipRect.x < WINCONST) {
+        shipRect.x = WINCONST;
+    } else if (shipRect.x > (SCWIDTH - shipRect.w - WINCONST)) {
+        shipRect.x = (SCWIDTH - shipRect.w - WINCONST);
     }
 
     shipVel = shipVel * (NOFRIC - FRICRATE);
+    if (abs(shipVel) < .01) {
+        shipVel = 0;
+    }
 
-    shipPos += shipVel;
-    shipRect.x = shipPos;
+    shipRect.x += shipVel;
+
+
+    for (int i = 0; i < bullets.size(); i++) {
+        if (bullets.front().y < BREM) {
+            bullets.pop_front();
+        }
+    }
+
+    for (int i = 0; i < bullets.size(); i++ ) {
+        bullets.at(i).y -= BVEL;
+    }
 }
 
 
@@ -215,7 +237,7 @@ int main() {
         cout << "Successfully initialized." << endl;
         while (not done) {
             eventHandle();
-            moveShip();
+            updatePositions();
             renderGame();
         }
     } else {
