@@ -2,7 +2,7 @@ CC = gcc
 CXX = g++
 CFLAGS = -Wall
 CXXFLAGS = -Wall
-LDFLAGS = -L/usr/local/lib -lSDL2 -lSDL2main
+LDFLAGS = -L/usr/local/lib -lSDL2 -lSDL2main -lSDL2_image
 
 TARGET = game.exe
 
