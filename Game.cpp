@@ -20,6 +20,7 @@ const int TOGDEL        = 250;
 const int RENDEL        = 0;
 const int SCALEMODE     = 0;
 int FPS                 = 60;
+int FPC                 = 1000/FPS;
 int frame               = 0;
 int timeMes             ;
 int capDel              ;
@@ -123,8 +124,8 @@ void renderGame() {
     SDL_Delay(RENDEL);
     frame++;
     capDel = SDL_GetTicks() - timeMes;
-    if(CAPFPS == true && capDel < 1000 / FPS) {
-        SDL_Delay(1000/FPS - capDel);
+    if(CAPFPS == true && capDel < FPC) {
+        SDL_Delay(FPC - capDel);
     }
 }
 
@@ -163,15 +164,6 @@ void eventHandle() {
             shipVel += SHIPDECEL;
             shipMv = false;
         }
-    }
-
-    if (state[SDL_SCANCODE_C]) {
-        if (FPS == 60) {
-            FPS = 120;
-        } else {
-            FPS = 60;
-        }
-
     }
 
     if (state[SDL_SCANCODE_RIGHT]) {
